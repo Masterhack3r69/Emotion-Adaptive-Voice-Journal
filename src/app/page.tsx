@@ -1,65 +1,81 @@
-import Image from "next/image";
+/**
+ * EAVJ - Emotion-Adaptive Voice Journal
+ *
+ * Main application page. A minimalist interface with:
+ * - Generative ambient background responding to emotion
+ * - Central recorder button
+ * - Subtle waveform visualization
+ * - Privacy-first messaging
+ */
+
+"use client";
+
+import { useEffect } from "react";
+import { motion } from "framer-motion";
+import { AmbientBackground } from "@/components/AmbientBackground";
+import { RecorderButton } from "@/components/RecorderButton";
+import { WaveformVisualizer } from "@/components/WaveformVisualizer";
+import { DebugPanel } from "@/components/DebugPanel";
+import { useEmotionEngine } from "@/hooks/useEmotionEngine";
+import { useAudioAnalysis } from "@/hooks/useAudioAnalysis";
+import { useEmotionStore } from "@/stores/emotionStore";
 
 export default function Home() {
+  const { visualTheme, audioFeatures, processAudio } = useEmotionEngine();
+  const { startRecording, stopRecording } = useAudioAnalysis();
+  const { isRecording, audioFeatures: currentFeatures } = useEmotionStore();
+
+  // Process audio features when they change
+  useEffect(() => {
+    if (currentFeatures.isActive) {
+      processAudio(currentFeatures);
+    }
+  }, [currentFeatures, processAudio]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="relative min-h-screen w-full overflow-hidden">
+      {/* Generative ambient background */}
+      <AmbientBackground theme={visualTheme} />
+
+      {/* Main content overlay */}
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
+
+
+        {/* Waveform visualization (above button when recording) */}
+        <div className="mb-8 h-16">
+          <WaveformVisualizer
+            isActive={isRecording}
+            audioFeatures={currentFeatures}
+          />
+        </div>
+
+        {/* Central recorder button */}
+        <RecorderButton onStart={startRecording} onStop={stopRecording} />
+
+        {/* Subtle instruction text (fades when recording) */}
+        <motion.p
+          className="mt-12 text-white/40 text-sm font-light tracking-wide"
+          animate={{ opacity: isRecording ? 0.2 : 0.4 }}
+          transition={{ duration: 0.5 }}
+        >
+          {isRecording ? "listening..." : "tap to begin"}
+        </motion.p>
+
+        {/* Privacy notice - bottom of screen */}
+        <motion.div
+          className="absolute bottom-8 left-0 right-0 flex justify-center"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1, duration: 0.8 }}
+        >
+          <p className="text-white/20 text-xs font-light tracking-wider text-center max-w-xs">
+            Processing happens locally. No audio is stored.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+        </motion.div>
+      </div>
+
+      {/* Debug panel (toggle with 'D' key) */}
+      <DebugPanel />
+    </main>
   );
 }

@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EAVJ | Emotion-Adaptive Voice Journal
 
-## Getting Started
+A high-fidelity generative visual interface that acts as a sensory "mirror" for your voice. In contrast to traditional mood trackers that use restrictive text labels or categorical classification, EAVJ interprets the raw _quality_ of speech to render an immersive, shifting environment in real-time.
 
-First, run the development server:
+![EAVJ Wave Demo](public/screenshot.png)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🌌 Philosophy: The Mirror Concept
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+EAVJ is designed as a mature, atmospheric space for self-reflection. It adheres to three core design pillars:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Zero Labels**: Avoiding judgment. The system never says "You sound sad." Instead, it reflects your state back to you through color and motion, allowing for subjective interpretation.
+2. **Abstract Expression**: Utilizing fluid, amorphous gradients that mimic biological breathing patterns and aurora-like shifting.
+3. **High Fidelity**: A "Blade Runner" meets "Headspace" aesthetic—dark, somber, and deeply atmospheric.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠 Technical Architecture
 
-## Learn More
+### 1. Audio Processing Engine
 
-To learn more about Next.js, take a look at the following resources:
+The system utilizes the **Web Audio API (`AnalyserNode`)** to extract real-time frequency and time-domain data directly from the microphone:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **RMS (Root Mean Square)**: Maps to vocal intensity and "Arousal."
+- **Spectral Centroid**: Determines the "brightness" or pitch of the voice, mapping to "Valence."
+- **Zero Crossing Rate**: Calculates pitch variance to detect agitation or calmness.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2. The Emotion Engine (Russell's Circumplex Model)
 
-## Deploy on Vercel
+Audio features are normalized and mapped onto the **Valence-Arousal** coordinate system:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **Valence (X-axis)**: Maps Pitch/Brightness to Color Temperature (Deep Blue/Teal ↔ Warm Gold/Amber).
+- **Arousal (Y-axis)**: Maps Volume/Variance to Motion Dynamics (Slow/Fluid ↔ Fast/Sharp).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The engine uses **Bilinear Interpolation** to blend between four predefined emotional quadrants, ensuring that transitions between "Melancholic" and "Joyful" are continuous and seamless.
+
+### 3. Generative Visual System
+
+The background is a custom-built generative canvas using **Framer Motion**:
+
+- **Blob Morphing**: Uses `border-radius` interpolation to create organic, liquid shapes.
+- **Exponential Smoothing**: Prevents visual "jitter" from raw audio noise, creating a smooth, high-inertia motion feel.
+- **Mix-Blend Modes**: Utilizes `screen` and `overlay` blending for complex, high-depth color layering.
+
+## 🔒 Privacy First
+
+Privacy is not an add-on; it is the foundation.
+
+- **Local-Only Processing**: Audio is processed in-memory using the client-side Web Audio API.
+- **No Storage**: The microphone stream is never recorded, saved, or transmitted to any server.
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- NPM / PNPM / Yarn
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+4. Access the journal at `http://localhost:3000`
+
+## ⌨️ Controls
+
+- **Central Button**: Toggle microphone listening.
+- **`D` Key**: Open the **Debug Override Panel** to manually simulate emotion states and test visual transitions.
+
+## 🏗 Technology Stack
+
+- **Framework**: Next.js 15 (App Router / TypeScript)
+- **Animation**: Framer Motion
+- **State Management**: Zustand
+- **Audio Logic**: Web Audio API
+- **Styling**: Tailwind CSS / Vanilla CSS Gradients
+
+---
+
+_Built as a high-end portfolio project focusing on Signal Processing and Generative Design._

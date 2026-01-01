@@ -1,8 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #ffffff;
+
+  /* Emotion theme variables (dynamically set by JS) */
+  --emotion-primary-h: 210;
+  --emotion-primary-s: 100%;
+  --emotion-primary-l: 8%;
+  --emotion-blur: 60px;
+  --emotion-speed: 8s;
 }
 
 @theme inline {
@@ -12,15 +19,48 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
+html,
 body {
-  background: var(--background);
+  margin: 0;
+  padding: 0;
+  background: #000000;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Selection styling */
+::selection {
+  background: rgba(255, 255, 255, 0.1);
+  color: inherit;
+}
+
+/* Custom scrollbar (if needed later) */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Smooth transitions for emotion-driven properties */
+.emotion-transition {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
