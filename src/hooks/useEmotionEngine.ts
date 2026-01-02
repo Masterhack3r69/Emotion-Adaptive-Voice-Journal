@@ -153,25 +153,54 @@ function interpolateThemes(emotion: EmotionState): VisualTheme {
  * Map audio features to emotion state
  */
 function audioToEmotion(features: AudioFeatures): EmotionState {
-  // Valence: derived from spectral centroid (brightness)
-  // Typical speech: 1000-3000 Hz centroid (narrowed for better sensitivity)
-  // Higher = brighter, more energetic = more positive
-  let valence = mapRange(
+  // Valence: derived from Pitch (F0) and Spectral Centroid
+  // Higher pitch (relative to range) often indicates excitement/happiness
+  // Lower pitch can indicate sadness or calmness
+  // We use a safe range of 80Hz - 400Hz for typical speech fundamental frequency
+  
+  // 1. Pitch Component (F0)
+  let pitchValence = 0;
+  if (features.pitch > 50) { // filter out 0 or bad readings
+      // Map 100-300Hz roughly to -0.5 to 0.5 range? 
+      // Actually, variability is better, but raw pitch does convey some "bright/dark" quality
+      pitchValence = mapRange(features.pitch, 100, 300, -0.5, 0.5);
+  }
+
+  // 2. Brightness Component (Spectral Centroid) - KEEPING THIS
+  // Higher = bright = positive
+  const brightnessValence = mapRange(
     features.spectralCentroid,
-    1000, // low/sad voice start
-    3000, // bright/happy voice start (lowered from 3500 to catch more inputs)
+    1000, 
+    3000,
     -1,
     1
   );
 
-  // Apply sigmoid to make it "snap" more to positive/negative, avoiding the "gray zone"
-  valence = sigmoid(valence, 3); // Steepness of 3
+  // Combine Pitch + Brightness for Valence
+  let valence = clamp((pitchValence * 0.4) + (brightnessValence * 0.6), -1, 1);
+  valence = sigmoid(valence, 3); 
 
-  // Arousal: derived from RMS (volume) + pitch variance
-  // Loud + variable = high arousal, quiet + steady = low arousal
-  const volumeComponent = mapRange(features.rms, 0.02, 0.4, -1, 1); // Lowered max from 0.5
+  // Arousal: derived from RMS (Loudness) + Spectral Flatness (Noise/Intensity)
+  // Loud + Noisy = High Arousal (Anger/Excitement)
+  // Quiet + Tonal = Low Arousal (Calm/Sadness)
+  
+  const volumeComponent = mapRange(features.rms, 0.02, 0.4, -1, 1);
+  
+  // Spectral Flatness (Clarity): 1 = tonal/clear, 0 = noisy
+  // We want "Noisy/Sharp" to add to arousal? 
+  // Actually, flatness is usually 0 to 1 where 1 is noise (white noise) and 0 is pure sine tone?
+  // Wait, my implementation of flatness: geometricMean/arithmeticMean.
+  // White noise -> 1.0. Sine wave -> ~0.0.
+  // So High Flatness = Noisy. 
+  // High arousal often correlates with 'tenser' vocal cords -> more harmonics -> potentially simpler spectrum? 
+  // Actually, angry speech is often 'noisier' / rougher.
+  
+  const noiseComponent = mapRange(features.clarity, 0.1, 0.6, -0.5, 0.5);
+  
+  // Pitch Variance also indicates arousal (monotone = low arousal)
   const varianceComponent = mapRange(features.pitchVariance, 0, 0.5, -0.5, 0.5);
-  let arousal = clamp(volumeComponent + varianceComponent, -1, 1);
+
+  let arousal = clamp(volumeComponent + noiseComponent + varianceComponent, -1, 1);
   
   // Apply slightly gentler sigmoid to arousal
   arousal = sigmoid(arousal, 2.5);

@@ -42,6 +42,8 @@ const defaultAudioFeatures: AudioFeatures = {
   rms: 0,
   spectralCentroid: 0,
   pitchVariance: 0,
+  pitch: 0,
+  clarity: 0,
   isActive: false,
 };
 

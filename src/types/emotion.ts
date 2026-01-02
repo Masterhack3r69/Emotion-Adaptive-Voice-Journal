@@ -20,6 +20,8 @@ export interface AudioFeatures {
   rms: number; // Root Mean Square (volume) - 0 to 1
   spectralCentroid: number; // Brightness/pitch center - Hz value
   pitchVariance: number; // Variation in pitch - 0 to 1
+  pitch: number; // Fundamental Frequency (F0) in Hz
+  clarity: number; // Spectral flatness/tonality - 0 (noise) to 1 (tone)
   isActive: boolean; // Whether audio is being captured
 }
 

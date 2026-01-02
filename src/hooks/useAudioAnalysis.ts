@@ -16,6 +16,8 @@ import {
   calculateSpectralCentroid,
   calculateZeroCrossingRate,
   isActiveAudio,
+  improvedAutoCorrelate,
+  calculateSpectralFlatness,
 } from "@/lib/audioUtils";
 import type { AudioFeatures } from "@/types/emotion";
 
@@ -91,11 +93,17 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
         );
         const pitchVariance = calculateZeroCrossingRate(timeData);
         const isActive = isActiveAudio(rms);
+        
+        // New Features
+        const pitch = improvedAutoCorrelate(timeData, audioContextRef.current.sampleRate);
+        const clarity = calculateSpectralFlatness(frequencyData);
 
         const features: AudioFeatures = {
           rms,
           spectralCentroid,
           pitchVariance,
+          pitch,
+          clarity,
           isActive,
         };
 
@@ -136,6 +144,8 @@ export function useAudioAnalysis(): UseAudioAnalysisReturn {
       rms: 0,
       spectralCentroid: 0,
       pitchVariance: 0,
+      pitch: 0,
+      clarity: 0,
       isActive: false,
     });
   }, [setAudioFeatures]);

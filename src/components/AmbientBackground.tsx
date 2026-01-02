@@ -22,28 +22,19 @@ interface AmbientBackgroundProps {
 }
 
 // Configuration for the blob particles
-const BLOB_COUNT = 6;
+const BLOB_COUNT = 15; // Increased for bokeh density
 const BLOB_CONFIGS = Array.from({ length: BLOB_COUNT }, (_, i) => ({
   id: i,
-  // Much larger sizes for "wave" effect
-  baseSize: 600 + seededRandom(i * 17) * 600, // 600-1200px
-  initialX: seededRandom(i * 31) * 100 - 20, // -20% to 80% coverage
-  initialY: seededRandom(i * 47) * 100 - 20,
-  // Random blob shapes (borderRadius)
-  shape1: `${30 + seededRandom(i) * 40}% ${30 + seededRandom(i + 1) * 40}% ${
-    30 + seededRandom(i + 2) * 40
-  }% ${30 + seededRandom(i + 3) * 40}% / ${30 + seededRandom(i + 4) * 40}% ${
-    30 + seededRandom(i + 5) * 40
-  }% ${30 + seededRandom(i + 6) * 40}% ${30 + seededRandom(i + 7) * 40}%`,
-  shape2: `${30 + seededRandom(i + 10) * 40}% ${
-    30 + seededRandom(i + 11) * 40
-  }% ${30 + seededRandom(i + 12) * 40}% ${30 + seededRandom(i + 13) * 40}% / ${
-    30 + seededRandom(i + 14) * 40
-  }% ${30 + seededRandom(i + 15) * 40}% ${30 + seededRandom(i + 16) * 40}% ${
-    30 + seededRandom(i + 17) * 40
-  }%`,
+  // Smaller sizes for "light" effect
+  baseSize: 150 + seededRandom(i * 17) * 250, // 150-400px
+  initialX: seededRandom(i * 31) * 100 - 10,
+  initialY: seededRandom(i * 47) * 100 - 10,
+  // More circular shapes (bokeh)
+  shape1: "50%", 
+  shape2: `${40 + seededRandom(i) * 20}%`, // Slight waviness
+  
   rotation: seededRandom(i * 91) * 360,
-  opacityMultiplier: 0.4 + seededRandom(i * 89) * 0.4, // 0.4-0.8x
+  opacityMultiplier: 0.3 + seededRandom(i * 89) * 0.5, // 0.3-0.8x
 }));
 
 // Default theme (melancholic/low energy)
@@ -141,41 +132,28 @@ export function AmbientBackground({ theme }: AmbientBackgroundProps) {
             }}
             animate={{
               x: [
-                -blob.drift * 2,
-                blob.drift * 1.5,
                 -blob.drift,
-                blob.drift * 1.8,
-                -blob.drift * 2,
+                blob.drift,
+                -blob.drift,
               ],
               y: [
-                blob.drift,
-                -blob.drift * 1.5,
-                blob.drift * 2,
                 -blob.drift,
                 blob.drift,
+                -blob.drift,
               ],
-              rotate: [blob.rotation, blob.rotation + 180, blob.rotation + 360],
-              borderRadius: [
-                blob.shape1,
-                blob.shape2,
-                blob.shape1,
-                blob.shape2,
-                blob.shape1,
-              ],
-              scale: [1, 1.1, 0.95, 1.05, 1],
+              rotate: [blob.rotation, blob.rotation + 45, blob.rotation], // Gentle rotation
+              scale: [1, 1.2, 1], // Breathing light effect
               opacity: [
                 blob.opacity,
-                blob.opacity * 0.8,
-                blob.opacity,
-                blob.opacity * 0.9,
+                blob.opacity * 1.5, // "Twinkle"
                 blob.opacity,
               ],
             }}
             transition={{
               duration: blob.duration,
               repeat: Infinity,
-              ease: "linear", // Fluid continuous motion
-              times: [0, 0.25, 0.5, 0.75, 1],
+              ease: "easeInOut",
+              times: [0, 0.5, 1],
             }}
           />
         ))}
