@@ -17,12 +17,17 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { useEmotionStore } from "@/stores/emotionStore";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
+import Sentiment from "sentiment";
 import type {
   EmotionState,
   AudioFeatures,
   VisualTheme,
 } from "@/types/emotion";
 import { lerp, mapRange, clamp, exponentialSmooth } from "@/lib/colorUtils";
+
+// Initialize Sentiment analyzer
+const sentimentAnalyzer = new Sentiment();
 
 // Visual theme presets for the four quadrants
 const THEME_PRESETS = {
@@ -185,10 +190,52 @@ export function useEmotionEngine() {
     audioFeatures,
     setVisualTheme,
     visualTheme,
+    isRecording, // We need to check if recording is active to start speech recognition
   } = useEmotionStore();
+
+  // Integrated Speech-to-Text
+  const { 
+    transcript, 
+    startListening, 
+    stopListening, 
+    resetTranscript,
+    isSupported: isSpeechSupported 
+  } = useSpeechToText();
 
   // Smoothed values for transition
   const smoothedEmotion = useRef<EmotionState>({ valence: 0, arousal: 0 });
+  const semanticValenceRef = useRef<number>(0);
+
+  // Handle Recording State for Speech Recognition
+  useEffect(() => {
+    if (isRecording && isSpeechSupported) {
+      startListening();
+    } else {
+      stopListening();
+    }
+  }, [isRecording, isSpeechSupported, startListening, stopListening]);
+
+  // Analyze Transcript Sentiment
+  useEffect(() => {
+    if (!transcript) return;
+    
+    // Analyze only the last portion of text to keep it "real-time" relevant
+    // Taking the last ~100 chars (approx last sentence)
+    const recentText = transcript.slice(-100);
+    const result = sentimentAnalyzer.analyze(recentText);
+    
+    // Normalize score (typically -5 to 5, but can be higher)
+    // We map a score of +/- 3 to full +/- 1 valence
+    const normalizedScore = clamp(result.score / 3, -1, 1);
+    
+    if (result.score !== 0) {
+      semanticValenceRef.current = normalizedScore;
+    }
+    
+    // Decay semantic valence slowly if no new sentiment? 
+    // For now we keep the last known sentiment until new sentiment arrives
+  }, [transcript]);
+
 
   // Update visual theme when emotion state changes
   const updateTheme = useCallback(() => {
@@ -216,8 +263,31 @@ export function useEmotionEngine() {
       if (isSimulationMode) return;
 
       if (features.isActive) {
-        const emotion = audioToEmotion(features);
-        setEmotionState(emotion);
+        const acousticEmotion = audioToEmotion(features);
+        
+        // FUSION LOGIC
+        // We blend Acoustic (Tone) and Semantic (Meaning)
+        // 1. Valence (Mood): Heavily weighted by Semantic (60%) if we have data, 
+        //    mixed with Acoustic (40%) to keep tone relevant.
+        // 2. Arousal (Energy): Purely Acoustic (since text doesn't convey loudness well).
+        
+        const semanticWeight = 0.6;
+        const acousticWeight = 1 - semanticWeight;
+        
+        let fusedValence = acousticEmotion.valence;
+        
+        // Only fuse if we have a non-zero semantic signal (to avoid dragging down to neutral if no words)
+        // Or if we have a transcript
+        if (semanticValenceRef.current !== 0) {
+           fusedValence = (acousticEmotion.valence * acousticWeight) + (semanticValenceRef.current * semanticWeight);
+        }
+
+        const fusedArousal = acousticEmotion.arousal; // Keep arousal purely physical/acoustic for now
+
+        setEmotionState({ 
+          valence: clamp(fusedValence, -1, 1), 
+          arousal: clamp(fusedArousal, -1, 1) 
+        });
       }
     },
     [isSimulationMode, setEmotionState]
@@ -254,5 +324,6 @@ export function useEmotionEngine() {
     processAudio,
     setSimulatedEmotion,
     isSimulationMode,
+    transcript // Expose transcript for debugging/UI
   };
 }

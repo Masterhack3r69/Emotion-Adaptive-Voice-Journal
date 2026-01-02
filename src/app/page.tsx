@@ -21,7 +21,7 @@ import { useAudioAnalysis } from "@/hooks/useAudioAnalysis";
 import { useEmotionStore } from "@/stores/emotionStore";
 
 export default function Home() {
-  const { visualTheme, audioFeatures, processAudio } = useEmotionEngine();
+  const { visualTheme, audioFeatures, processAudio, transcript } = useEmotionEngine();
   const { startRecording, stopRecording } = useAudioAnalysis();
   const { isRecording, audioFeatures: currentFeatures } = useEmotionStore();
 
@@ -59,6 +59,14 @@ export default function Home() {
           transition={{ duration: 0.5 }}
         >
           {isRecording ? "listening..." : "tap to begin"}
+        </motion.p>
+
+        {/* Live Transcript Display */}
+        <motion.p
+           className="mt-4 text-white/60 text-lg font-light tracking-wide text-center max-w-lg h-6"
+           animate={{ opacity: isRecording ? 1 : 0 }}
+        >
+          {transcript}
         </motion.p>
 
         {/* Privacy notice - bottom of screen */}
