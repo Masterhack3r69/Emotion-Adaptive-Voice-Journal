@@ -88,6 +88,14 @@ const THEME_PRESETS = {
 };
 
 /**
+ * Sigmoid transfer function to make detection more sensitive around the center
+ * k = steepness (higher = more sensitive)
+ */
+function sigmoid(x: number, k: number = 4): number {
+  return 2 / (1 + Math.exp(-k * x)) - 1;
+}
+
+/**
  * Interpolate between theme values based on emotion state
  */
 function interpolateThemes(emotion: EmotionState): VisualTheme {
@@ -141,21 +149,27 @@ function interpolateThemes(emotion: EmotionState): VisualTheme {
  */
 function audioToEmotion(features: AudioFeatures): EmotionState {
   // Valence: derived from spectral centroid (brightness)
-  // Typical speech: 1000-4000 Hz centroid
+  // Typical speech: 1000-3000 Hz centroid (narrowed for better sensitivity)
   // Higher = brighter, more energetic = more positive
-  const valence = mapRange(
+  let valence = mapRange(
     features.spectralCentroid,
-    800, // low/sad voice
-    3500, // bright/happy voice
+    1000, // low/sad voice start
+    3000, // bright/happy voice start (lowered from 3500 to catch more inputs)
     -1,
     1
   );
 
+  // Apply sigmoid to make it "snap" more to positive/negative, avoiding the "gray zone"
+  valence = sigmoid(valence, 3); // Steepness of 3
+
   // Arousal: derived from RMS (volume) + pitch variance
   // Loud + variable = high arousal, quiet + steady = low arousal
-  const volumeComponent = mapRange(features.rms, 0.02, 0.5, -1, 1);
-  const varianceComponent = mapRange(features.pitchVariance, 0, 0.6, -0.5, 0.5);
-  const arousal = clamp(volumeComponent + varianceComponent, -1, 1);
+  const volumeComponent = mapRange(features.rms, 0.02, 0.4, -1, 1); // Lowered max from 0.5
+  const varianceComponent = mapRange(features.pitchVariance, 0, 0.5, -0.5, 0.5);
+  let arousal = clamp(volumeComponent + varianceComponent, -1, 1);
+  
+  // Apply slightly gentler sigmoid to arousal
+  arousal = sigmoid(arousal, 2.5);
 
   return { valence, arousal };
 }
@@ -183,12 +197,12 @@ export function useEmotionEngine() {
       valence: exponentialSmooth(
         smoothedEmotion.current.valence,
         emotionState.valence,
-        0.08 // Slow smoothing for gentle transitions
+        0.15 // Increased from 0.08 for more responsive feel
       ),
       arousal: exponentialSmooth(
         smoothedEmotion.current.arousal,
         emotionState.arousal,
-        0.08
+        0.15
       ),
     };
 
