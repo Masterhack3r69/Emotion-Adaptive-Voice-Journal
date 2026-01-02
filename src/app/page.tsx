@@ -77,7 +77,7 @@ export default function Home() {
           transition={{ delay: 1, duration: 0.8 }}
         >
           <p className="text-white/20 text-xs font-light tracking-wider text-center max-w-xs">
-            Processing happens locally. No audio is stored.
+            Processing happens locally. No audio is stored. (this is still an experimental version)
           </p>
         </motion.div>
       </div>
